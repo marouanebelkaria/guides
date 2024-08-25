@@ -1,0 +1,67 @@
+Pour installer Ansible sur Ubuntu 24 (ou Ubuntu 22.04 si c'est la version la plus récente disponible), vous pouvez suivre ces étapes. Ansible est disponible dans les dépôts officiels d'Ubuntu, mais il est souvent préférable d'utiliser le PPA officiel d'Ansible pour obtenir la dernière version.
+
+Étape 1: Mettre à Jour le Système
+Avant d'installer Ansible, il est conseillé de mettre à jour votre système pour vous assurer que tous les paquets sont à jour.
+
+bash
+Copier le code
+sudo apt update
+sudo apt upgrade -y
+Étape 2: Installer les Dépendances
+Ansible nécessite Python, et les bibliothèques associées sont généralement déjà présentes dans les distributions Ubuntu modernes. Cependant, assurez-vous que Python et le gestionnaire de paquets software-properties-common sont installés:
+
+bash
+Copier le code
+sudo apt install -y python3 python3-pip software-properties-common
+Étape 3: Ajouter le Dépôt Ansible
+Ajoutez le dépôt officiel d'Ansible à votre système pour obtenir la dernière version stable.
+
+Ajouter le PPA d'Ansible:
+
+Utilisez la commande suivante pour ajouter le dépôt PPA officiel d'Ansible :
+
+bash
+Copier le code
+sudo add-apt-repository --yes --update ppa:ansible/ansible
+Mettre à Jour la Liste des Paquets:
+
+Après avoir ajouté le dépôt, mettez à jour la liste des paquets disponibles :
+
+bash
+Copier le code
+sudo apt update
+Étape 4: Installer Ansible
+Une fois le dépôt ajouté, installez Ansible avec la commande suivante :
+
+bash
+Copier le code
+sudo apt install ansible -y
+Étape 5: Vérifier l'Installation
+Pour vérifier que l'installation a réussi et pour voir la version d'Ansible installée, utilisez la commande suivante:
+
+bash
+Copier le code
+ansible --version
+Vous devriez voir la version d'Ansible ainsi que des informations supplémentaires sur les dépendances Python utilisées.
+
+Étape 6: Configurer Ansible (Facultatif)
+Bien qu'Ansible soit maintenant installé, vous pouvez souhaiter configurer certains fichiers par défaut, tels que le fichier d'inventaire /etc/ansible/hosts pour définir vos hôtes cibles et le fichier de configuration /etc/ansible/ansible.cfg pour ajuster les paramètres globaux.
+
+Modifier le Fichier d'Inventaire:
+
+Le fichier d'inventaire par défaut se trouve dans /etc/ansible/hosts. Vous pouvez y ajouter les hôtes que vous souhaitez gérer avec Ansible :
+
+ini
+Copier le code
+[webservers]
+web1.example.com
+web2.example.com
+
+[dbservers]
+db1.example.com
+db2.example.com
+Modifier le Fichier de Configuration Ansible (facultatif):
+
+Le fichier de configuration par défaut se trouve dans /etc/ansible/ansible.cfg. Vous pouvez ajuster divers paramètres tels que le comportement des modules, les options de connexion SSH, etc.
+
+Ansible est maintenant installé et prêt à l'emploi sur votre machine Ubuntu 24! Vous pouvez commencer à l'utiliser pour automatiser des tâches, gérer des configurations et orchestrer des déploiements sur vos serveurs et environnements.

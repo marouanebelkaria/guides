@@ -2,13 +2,15 @@
 - name: Installer une plateforme CI/CD complète sur Ubuntu
   hosts: localhost
   become: yes
+  connection: local  # Connexion locale, pas de SSH
 
   vars:
+    ansible_user: ubuntu  # Variable ajoutée pour définir l'utilisateur Ansible
     docker_version: "20.10"
     kubectl_version: "1.21.0"
     minikube_version: "v1.25.2"
     terraform_version: "1.0.11"
-    jenkins_url: "http://pkg.jenkins.io/debian-stable"
+    jenkins_key_url: "https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key"
     prometheus_version: "2.31.1"
     grafana_version: "8.3.0"
 
@@ -37,7 +39,7 @@
 
     - name: Installer Docker
       shell: |
-        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
         add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
         apt update
         apt install -y docker-ce docker-ce-cli containerd.io
@@ -51,10 +53,11 @@
         append: yes
 
     - name: Installer Docker Compose
-      get_url:
-        url: "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)"
-        dest: /usr/local/bin/docker-compose
-        mode: 'a+x'
+      shell: |
+        curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        chmod +x /usr/local/bin/docker-compose
+      args:
+        executable: /bin/bash
 
     - name: Installer Kubernetes Kubectl
       get_url:
@@ -77,14 +80,26 @@
       args:
         executable: /bin/bash
 
-    - name: Installer Jenkins
+    - name: Ajouter la clé GPG Jenkins
       shell: |
-        wget -q -O - {{ jenkins_url }}/jenkins.io.key | apt-key add -
-        sh -c 'echo deb {{ jenkins_url }} binary/ > /etc/apt/sources.list.d/jenkins.list'
-        apt update
-        apt install -y jenkins
+        curl -fsSL {{ jenkins_key_url }} | sudo tee /usr/share/keyrings/jenkins-keyring.asc
       args:
         executable: /bin/bash
+
+    - name: Ajouter le dépôt Jenkins
+      shell: |
+        echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list
+      args:
+        executable: /bin/bash
+
+    - name: Mettre à jour les paquets APT
+      apt:
+        update_cache: yes
+
+    - name: Installer Jenkins
+      apt:
+        name: jenkins
+        state: present
 
     - name: Démarrer et activer Jenkins
       systemd:

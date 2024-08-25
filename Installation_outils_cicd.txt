@@ -1,0 +1,163 @@
+---
+- name: Installer une plateforme CI/CD complète sur Ubuntu
+  hosts: localhost
+  become: yes
+
+  vars:
+    docker_version: "20.10"
+    kubectl_version: "1.21.0"
+    minikube_version: "v1.25.2"
+    terraform_version: "1.0.11"
+    jenkins_url: "http://pkg.jenkins.io/debian-stable"
+    prometheus_version: "2.31.1"
+    grafana_version: "8.3.0"
+
+  tasks:
+
+    - name: Mettre à jour les paquets APT
+      apt:
+        update_cache: yes
+        upgrade: yes
+
+    - name: Installer les paquets de base
+      apt:
+        name:
+          - curl
+          - wget
+          - git
+          - unzip
+          - software-properties-common
+          - apt-transport-https
+          - ca-certificates
+          - gnupg
+          - lsb-release
+          - python3
+          - python3-pip
+        state: present
+
+    - name: Installer Docker
+      shell: |
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+        add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+        apt update
+        apt install -y docker-ce docker-ce-cli containerd.io
+      args:
+        executable: /bin/bash
+
+    - name: Ajouter l'utilisateur actuel au groupe Docker
+      user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
+
+    - name: Installer Docker Compose
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)"
+        dest: /usr/local/bin/docker-compose
+        mode: 'a+x'
+
+    - name: Installer Kubernetes Kubectl
+      get_url:
+        url: "https://storage.googleapis.com/kubernetes-release/release/v{{ kubectl_version }}/bin/linux/amd64/kubectl"
+        dest: /usr/local/bin/kubectl
+        mode: 'a+x'
+
+    - name: Installer Minikube
+      get_url:
+        url: "https://storage.googleapis.com/minikube/releases/{{ minikube_version }}/minikube-linux-amd64"
+        dest: /usr/local/bin/minikube
+        mode: 'a+x'
+
+    - name: Installer Terraform
+      shell: |
+        wget https://releases.hashicorp.com/terraform/{{ terraform_version }}/terraform_{{ terraform_version }}_linux_amd64.zip
+        unzip terraform_{{ terraform_version }}_linux_amd64.zip
+        mv terraform /usr/local/bin/
+        rm terraform_{{ terraform_version }}_linux_amd64.zip
+      args:
+        executable: /bin/bash
+
+    - name: Installer Jenkins
+      shell: |
+        wget -q -O - {{ jenkins_url }}/jenkins.io.key | apt-key add -
+        sh -c 'echo deb {{ jenkins_url }} binary/ > /etc/apt/sources.list.d/jenkins.list'
+        apt update
+        apt install -y jenkins
+      args:
+        executable: /bin/bash
+
+    - name: Démarrer et activer Jenkins
+      systemd:
+        name: jenkins
+        state: started
+        enabled: yes
+
+    - name: Installer PostgreSQL
+      apt:
+        name: postgresql
+        state: present
+
+    - name: Installer MySQL
+      apt:
+        name: mysql-server
+        state: present
+
+    - name: Installer Prometheus
+      shell: |
+        wget https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz
+        tar xvf prometheus-{{ prometheus_version }}.linux-amd64.tar.gz
+        mv prometheus-{{ prometheus_version }}.linux-amd64/prometheus /usr/local/bin/
+        mv prometheus-{{ prometheus_version }}.linux-amd64/promtool /usr/local/bin/
+        rm -rf prometheus-{{ prometheus_version }}.linux-amd64*
+      args:
+        executable: /bin/bash
+
+    - name: Installer Grafana
+      shell: |
+        wget https://dl.grafana.com/oss/release/grafana_{{ grafana_version }}_amd64.deb
+        dpkg -i grafana_{{ grafana_version }}_amd64.deb
+        apt-get install -f -y
+      args:
+        executable: /bin/bash
+
+    - name: Démarrer et activer Grafana
+      systemd:
+        name: grafana-server
+        state: started
+        enabled: yes
+
+    - name: Installer Nginx
+      apt:
+        name: nginx
+        state: present
+
+    - name: Démarrer et activer Nginx
+      systemd:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: Installer Maven
+      apt:
+        name: maven
+        state: present
+
+    - name: Installer Gradle
+      apt:
+        name: gradle
+        state: present
+
+    - name: Installer d'autres outils DevOps
+      apt:
+        name:
+          - tmux
+          - htop
+          - tree
+        state: present
+
+    - name: Nettoyer et recharger les configurations
+      shell: |
+        sudo usermod -aG docker $USER
+        newgrp docker
+      args:
+        executable: /bin/bash

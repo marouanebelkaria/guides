@@ -5,7 +5,7 @@
   connection: local  # Connexion locale, pas de SSH
 
   vars:
-    ansible_user: ubuntu  # Variable ajoutée pour définir l'utilisateur Ansible
+    ansible_user: ubuntu
     docker_version: "20.10"
     kubectl_version: "1.21.0"
     minikube_version: "v1.25.2"
@@ -36,6 +36,22 @@
           - python3
           - python3-pip
         state: present
+
+    - name: Ajouter la clé GPG Jenkins de manière sécurisée
+      shell: |
+        curl -fsSL {{ jenkins_key_url }} | sudo tee /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+      args:
+        executable: /bin/bash
+
+    - name: Ajouter le dépôt Jenkins avec la clé signée
+      shell: |
+        echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+      args:
+        executable: /bin/bash
+
+    - name: Mettre à jour les paquets APT après ajout de Jenkins
+      apt:
+        update_cache: yes
 
     - name: Installer Docker
       shell: |
@@ -79,22 +95,6 @@
         rm terraform_{{ terraform_version }}_linux_amd64.zip
       args:
         executable: /bin/bash
-
-    - name: Ajouter la clé GPG Jenkins
-      shell: |
-        curl -fsSL {{ jenkins_key_url }} | sudo tee /usr/share/keyrings/jenkins-keyring.asc
-      args:
-        executable: /bin/bash
-
-    - name: Ajouter le dépôt Jenkins
-      shell: |
-        echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list
-      args:
-        executable: /bin/bash
-
-    - name: Mettre à jour les paquets APT
-      apt:
-        update_cache: yes
 
     - name: Installer Jenkins
       apt:

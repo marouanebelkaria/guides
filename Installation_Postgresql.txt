@@ -1,0 +1,132 @@
+Pour installer PostgreSQL sur un serveur Ubuntu, suivez ces étapes. Ces instructions sont valables pour les versions récentes d'Ubuntu, comme Ubuntu 20.04 et 22.04.
+
+---------------------------------
+Étape 1: Mettre à Jour le Système
+---------------------------------
+
+Avant d'installer PostgreSQL, assurez-vous que votre système est à jour.
+
+
+sudo apt update
+sudo apt upgrade -y
+
+-----------------------------
+Étape 2: Installer PostgreSQL
+-----------------------------
+
+Installez PostgreSQL en utilisant le gestionnaire de paquets apt. Le paquet postgresql installera toujours la dernière version stable de PostgreSQL disponible dans les dépôts officiels d'Ubuntu.
+
+
+sudo apt install postgresql postgresql-contrib -y
+postgresql: le paquet principal de PostgreSQL.
+postgresql-contrib: ce paquet contient des utilitaires supplémentaires et des modules supplémentaires qui sont souvent utilisés avec PostgreSQL.
+
+-----------------------------------------
+Étape 3: Vérifier le Statut de PostgreSQL
+-----------------------------------------
+
+Après l'installation, PostgreSQL doit démarrer automatiquement. Vérifiez le statut du service PostgreSQL pour vous assurer qu'il est en cours d'exécution.
+
+
+sudo systemctl status postgresql
+Si PostgreSQL est actif et fonctionne, vous verrez un statut "active (running)".
+
+----------------------------
+Étape 4: Utiliser PostgreSQL
+----------------------------
+
+PostgreSQL est maintenant installé et en cours d'exécution. Voici quelques commandes de base pour interagir avec PostgreSQL :
+
+Passer à l'utilisateur PostgreSQL:
+
+Par défaut, PostgreSQL crée un utilisateur système postgres pour gérer PostgreSQL. Changez l'utilisateur courant en postgres:
+
+
+sudo -i -u postgres
+Accéder au Shell PostgreSQL:
+
+Une fois que vous êtes l'utilisateur postgres, vous pouvez accéder au shell PostgreSQL en tapant:
+
+
+psql
+Cela vous amène au prompt de PostgreSQL postgres=#.
+
+Créer une Base de Données:
+
+Pour créer une nouvelle base de données, utilisez la commande CREATE DATABASE:
+
+
+CREATE DATABASE nom_de_la_base;
+Remplacez nom_de_la_base par le nom de la base de données que vous souhaitez créer.
+
+Créer un Utilisateur:
+
+Vous pouvez également créer un nouvel utilisateur avec un mot de passe :
+
+
+CREATE USER nom_utilisateur WITH PASSWORD 'mot_de_passe';
+Remplacez nom_utilisateur et mot_de_passe par vos informations d'utilisateur.
+
+Attribuer des Privilèges:
+
+Pour accorder des privilèges sur une base de données à un utilisateur, utilisez la commande GRANT:
+
+
+GRANT ALL PRIVILEGES ON DATABASE nom_de_la_base TO nom_utilisateur;
+Quitter le Shell PostgreSQL:
+
+Pour quitter le shell PostgreSQL, tapez:
+
+
+\q
+Retourner à l'Utilisateur Normal:
+
+Pour revenir à votre utilisateur normal, tapez exit:
+
+exit
+
+
+---------------------------------------------------
+Étape 5: Configurer l'Accès à Distance (Facultatif)
+---------------------------------------------------
+
+Si vous souhaitez permettre à des utilisateurs distants d'accéder à votre serveur PostgreSQL, vous devrez modifier le fichier de configuration de PostgreSQL.
+
+Modifier le Fichier postgresql.conf:
+
+Éditez le fichier de configuration principal pour autoriser l'écoute sur toutes les adresses IP.
+
+
+sudo nano /etc/postgresql/12/main/postgresql.conf
+(Note: Remplacez 12 par la version de PostgreSQL installée sur votre système.)
+
+Trouvez la ligne listen_addresses et modifiez-la pour qu'elle écoute sur toutes les interfaces :
+
+
+listen_addresses = '*'
+Modifier le Fichier pg_hba.conf:
+
+Modifiez le fichier pg_hba.conf pour définir les règles de connexion. Vous devrez ajouter une ligne pour permettre les connexions des utilisateurs distants.
+
+
+sudo nano /etc/postgresql/12/main/pg_hba.conf
+Ajoutez une ligne comme celle-ci pour autoriser les connexions TCP/IP à partir de tous les hôtes :
+
+
+host    all             all             0.0.0.0/0               md5
+Remarque: Pour des raisons de sécurité, remplacez 0.0.0.0/0 par une plage d'adresses IP plus restrictive si possible.
+
+Redémarrer PostgreSQL:
+
+Après avoir apporté les modifications, redémarrez PostgreSQL pour que les changements prennent effet.
+
+
+sudo systemctl restart postgresql
+
+----------------------------------------------------
+Étape 6: Vérifier l'Installation et la Configuration
+----------------------------------------------------
+
+Assurez-vous que PostgreSQL fonctionne correctement et est accessible comme prévu. Utilisez psql pour tester localement et tentez une connexion distante pour valider l'accès à distance si configuré.
+
+PostgreSQL est maintenant installé et configuré sur votre serveur Ubuntu! Vous pouvez commencer à utiliser la base de données pour vos applications.

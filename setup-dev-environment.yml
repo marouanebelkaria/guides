@@ -124,12 +124,18 @@
         dest: "{{ install_dir }}/grails"
         remote_src: yes
 
+    - name: List contents of JDK7 directory for debugging
+      command: "ls -la {{ install_dir }}/jdk7"
+      register: ls_jdk7
+
+    - name: Debug output of JDK7 directory listing
+      debug:
+        var: ls_jdk7.stdout_lines
+
     - name: Remove existing JDK7 directory to create symlink
       file:
         path: "{{ symlink_dir }}/jdk7"
         state: absent
-      when: 
-        - ansible_facts['os_family'] == "Debian"
 
     - name: Create symbolic link for JDK7
       file:
@@ -138,6 +144,7 @@
         state: link
         owner: ubuntu
         group: ubuntu
+      when: ls_jdk7.stdout.find('bin/java') != -1
 
     - name: Create symbolic link for JDK8
       file:

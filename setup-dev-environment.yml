@@ -5,16 +5,17 @@
   connection: local
 
   vars:
-    jdk8_version: "8u202-b08"
+    # URLs d'OpenJDK pour JDK7 et JDK8
+    jdk7_url: "https://github.com/openjdk/jdk7u-jdk7u60-b32-0.0.3/releases/download/jdk7u60-b32/OpenJDK7U-jdk_x64_linux_7u60b32.tar.gz"
+    jdk8_url: "https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u292-b10/OpenJDK8U-jdk_x64_linux_hotspot_8u292b10.tar.gz"
     maven_version: "3.8.5"
     sonar_version: "sonarqube-9.8.0.63668"
     grails_version: "2.2.0"
     install_dir: "/applis/bin"
-    java_download_url: "https://download.oracle.com/otn-pub/java/jdk"
-    maven_download_url: "https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/{{ maven_version }}/apache-maven-{{ maven_version }}-bin.zip"
+    maven_download_url: "https://archive.apache.org/dist/maven/maven-3/{{ maven_version }}/binaries/apache-maven-{{ maven_version }}-bin.zip"
     sonar_download_url: "https://binaries.sonarsource.com/Distribution/sonarqube/{{ sonar_version }}.zip"
     grails_download_url: "https://github.com/grails/grails-core/releases/download/v{{ grails_version }}/grails-{{ grails_version }}.zip"
-    symlink_dir: "/home/ubuntu/bin"
+    symlink_dir: "/applis/bin"
 
   tasks:
     - name: Create base directory for applications
@@ -23,22 +24,23 @@
         state: directory
         mode: '0755'
 
-    - name: Create directory for user symlinks
-      file:
-        path: "{{ symlink_dir }}"
-        state: directory
-        owner: ubuntu
-        group: ubuntu
-        mode: '0755'
-
     - name: Install required packages
       apt:
         name:
           - wget
           - unzip
-          - openjdk-8-jdk
         state: present
         update_cache: yes
+
+    - name: Download OpenJDK 7
+      get_url:
+        url: "{{ jdk7_url }}"
+        dest: "{{ install_dir }}/jdk7.tar.gz"
+
+    - name: Download OpenJDK 8
+      get_url:
+        url: "{{ jdk8_url }}"
+        dest: "{{ install_dir }}/jdk8.tar.gz"
 
     - name: Download Maven
       get_url:
@@ -55,37 +57,54 @@
         url: "{{ grails_download_url }}"
         dest: "{{ install_dir }}/grails-{{ grails_version }}.zip"
 
+    - name: Extract OpenJDK 7
+      unarchive:
+        src: "{{ install_dir }}/jdk7.tar.gz"
+        dest: "{{ install_dir }}/jdk7"
+        remote_src: yes
+        extra_opts: [--strip-components=1]
+
+    - name: Extract OpenJDK 8
+      unarchive:
+        src: "{{ install_dir }}/jdk8.tar.gz"
+        dest: "{{ install_dir }}/jdk8"
+        remote_src: yes
+        extra_opts: [--strip-components=1]
+
     - name: Extract Maven
       unarchive:
         src: "{{ install_dir }}/apache-maven-{{ maven_version }}-bin.zip"
-        dest: "{{ install_dir }}"
+        dest: "{{ install_dir }}/maven"
         remote_src: yes
+        extra_opts: [--strip-components=1]
 
     - name: Extract SonarQube
       unarchive:
         src: "{{ install_dir }}/{{ sonar_version }}.zip"
-        dest: "{{ install_dir }}"
+        dest: "{{ install_dir }}/sonar"
         remote_src: yes
+        extra_opts: [--strip-components=1]
 
     - name: Extract Grails
       unarchive:
         src: "{{ install_dir }}/grails-{{ grails_version }}.zip"
-        dest: "{{ install_dir }}"
+        dest: "{{ install_dir }}/grails"
         remote_src: yes
+        extra_opts: [--strip-components=1]
 
-    - name: Set JAVA_HOME for JDK8
+    - name: Set JAVA_HOME for JDK7
       lineinfile:
         path: /etc/environment
         regexp: '^JAVA_HOME='
-        line: 'JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64'
+        line: 'JAVA_HOME={{ install_dir }}/jdk7'
         state: present
 
     - name: Set environment variables for Maven and Grails
       blockinfile:
         path: /home/ubuntu/.bashrc
         block: |
-          export M2_HOME={{ install_dir }}/apache-maven-{{ maven_version }}
-          export GRAILS_HOME={{ install_dir }}/grails-{{ grails_version }}
+          export M2_HOME={{ install_dir }}/maven
+          export GRAILS_HOME={{ install_dir }}/grails
           export PATH=$PATH:$M2_HOME/bin:$GRAILS_HOME/bin
         owner: ubuntu
         group: ubuntu
@@ -93,50 +112,60 @@
     - name: Create SonarQube user
       user:
         name: sonar
-        home: "{{ install_dir }}/{{ sonar_version }}"
+        home: "{{ install_dir }}/sonar"
         shell: /bin/bash
 
     - name: Change ownership of SonarQube directory
       file:
-        path: "{{ install_dir }}/{{ sonar_version }}"
+        path: "{{ install_dir }}/sonar"
         owner: sonar
         group: sonar
         recurse: yes
 
+    - name: Create symbolic link for JDK7
+      file:
+        src: "{{ install_dir }}/jdk7/bin/java"
+        dest: "{{ install_dir }}/jdk7"
+        state: link
+        owner: ubuntu
+        group: ubuntu
+
     - name: Create symbolic link for JDK8
       file:
-        src: "/usr/lib/jvm/java-8-openjdk-amd64/bin/java"
-        dest: "{{ symlink_dir }}/java-8"
+        src: "{{ install_dir }}/jdk8/bin/java"
+        dest: "{{ install_dir }}/jdk8"
         state: link
         owner: ubuntu
         group: ubuntu
 
     - name: Create symbolic link for Maven
       file:
-        src: "{{ install_dir }}/apache-maven-{{ maven_version }}/bin/mvn"
-        dest: "{{ symlink_dir }}/mvn-{{ maven_version }}"
+        src: "{{ install_dir }}/maven/bin/mvn"
+        dest: "{{ install_dir }}/maven"
         state: link
         owner: ubuntu
         group: ubuntu
 
-    - name: Create symbolic link for Grails
+    - name: Create symbolic link for SonarQube
       file:
-        src: "{{ install_dir }}/grails-{{ grails_version }}/bin/grails"
-        dest: "{{ symlink_dir }}/grails-{{ grails_version }}"
+        src: "{{ install_dir }}/sonar/bin/linux-x86-64/sonar.sh"
+        dest: "{{ install_dir }}/sonar"
         state: link
         owner: ubuntu
         group: ubuntu
 
     - name: Start SonarQube service
-      shell: "nohup {{ install_dir }}/{{ sonar_version }}/bin/linux-x86-64/sonar.sh start &"
+      shell: "nohup {{ install_dir }}/sonar/bin/linux-x86-64/sonar.sh start &"
       args:
-        chdir: "{{ install_dir }}/{{ sonar_version }}"
+        chdir: "{{ install_dir }}/sonar"
 
     - name: Clean up temporary files
       file:
         path: "{{ item }}"
         state: absent
       loop:
+        - "{{ install_dir }}/jdk7.tar.gz"
+        - "{{ install_dir }}/jdk8.tar.gz"
         - "{{ install_dir }}/apache-maven-{{ maven_version }}-bin.zip"
         - "{{ install_dir }}/{{ sonar_version }}.zip"
         - "{{ install_dir }}/grails-{{ grails_version }}.zip"

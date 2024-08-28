@@ -101,6 +101,7 @@
         src: "{{ install_dir }}/{{ sonar_version }}.zip"
         dest: "{{ install_dir }}/sonar"
         remote_src: yes
+      notify: start sonarqube
 
     - name: Extract Grails
       unarchive:
@@ -124,8 +125,7 @@
         dest: "{{ symlink_dir }}/jdk7"
         state: link
         force: yes
-        owner: ubuntu
-        group: ubuntu
+      become_user: ubuntu
       when: jdk7_check.stat.exists == True and jdk7_check.stat.islnk == False
 
     - name: Create symbolic link for JDK8 directory if it does not already exist
@@ -134,8 +134,7 @@
         dest: "{{ symlink_dir }}/jdk8"
         state: link
         force: yes
-        owner: ubuntu
-        group: ubuntu
+      become_user: ubuntu
       when: jdk8_check.stat.exists == True and jdk8_check.stat.islnk == False
 
     - name: Create symbolic link for Maven
@@ -143,21 +142,14 @@
         src: "{{ install_dir }}/maven/bin/mvn"
         dest: "{{ symlink_dir }}/maven"
         state: link
-        owner: ubuntu
-        group: ubuntu
+      become_user: ubuntu
 
     - name: Create symbolic link for SonarQube
       file:
         src: "{{ install_dir }}/sonar/bin/linux-x86-64/sonar.sh"
         dest: "{{ symlink_dir }}/sonar"
         state: link
-        owner: ubuntu
-        group: ubuntu
-
-    - name: Start SonarQube service
-      shell: "nohup {{ install_dir }}/sonar/bin/linux-x86-64/sonar.sh start &"
-      args:
-        chdir: "{{ install_dir }}/sonar"
+      become_user: ubuntu
 
     - name: Clean up temporary files
       file:
@@ -169,3 +161,9 @@
         - "{{ install_dir }}/apache-maven-{{ maven_version }}-bin.zip"
         - "{{ install_dir }}/{{ sonar_version }}.zip"
         - "{{ install_dir }}/grails-{{ grails_version }}.zip"
+
+  handlers:
+    - name: start sonarqube
+      shell: "nohup {{ install_dir }}/sonar/bin/linux-x86-64/sonar.sh start &"
+      args:
+        chdir: "{{ install_dir }}/sonar"

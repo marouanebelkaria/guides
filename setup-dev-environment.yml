@@ -5,13 +5,13 @@
   connection: local
 
   vars:
-    jdk7_version: "7u80-b15"
+    jdk7_version: "7u80"
     jdk8_version: "8u202-b08"
     maven_version: "3.8.5"
     sonar_version: "sonarqube-9.8.0.63668"
     grails_version: "2.2.0"
     install_dir: "/applis/bin"
-    java_download_url: "https://download.oracle.com/otn-pub/java/jdk"
+    java_download_url: "https://download.java.net/java/GA/jdk7/archive/b147/binaries"
     maven_download_url: "https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/{{ maven_version }}/apache-maven-{{ maven_version }}-bin.zip"
     sonar_download_url: "https://binaries.sonarsource.com/Distribution/sonarqube/{{ sonar_version }}.zip"
     grails_download_url: "https://github.com/grails/grails-core/releases/download/v{{ grails_version }}/grails-{{ grails_version }}.zip"
@@ -41,7 +41,7 @@
 
     - name: Download JDK7
       get_url:
-        url: "{{ java_download_url }}/{{ jdk7_version }}/jdk-{{ jdk7_version }}-linux-x64.tar.gz"
+        url: "{{ java_download_url }}/jdk-7u80-linux-x64.tar.gz"
         dest: "{{ install_dir }}/jdk7.tar.gz"
 
     - name: Download JDK8

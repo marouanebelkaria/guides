@@ -37,38 +37,6 @@
           - tar
         state: present
 
-    - name: Create directory for JDK7
-      file:
-        path: "{{ install_dir }}/jdk7"
-        state: directory
-        mode: '0755'
-        recurse: yes
-
-    - name: Create directory for JDK8
-      file:
-        path: "{{ install_dir }}/jdk8"
-        state: directory
-        mode: '0755'
-        recurse: yes
-
-    - name: Create directory for Maven
-      file:
-        path: "{{ install_dir }}/maven"
-        state: directory
-        mode: '0755'
-
-    - name: Create directory for SonarQube
-      file:
-        path: "{{ install_dir }}/sonar"
-        state: directory
-        mode: '0755'
-
-    - name: Create directory for Grails
-      file:
-        path: "{{ install_dir }}/grails"
-        state: directory
-        mode: '0755'
-
     - name: Download OpenJDK 7
       get_url:
         url: "{{ jdk7_url }}"
@@ -93,6 +61,20 @@
       get_url:
         url: "{{ grails_download_url }}"
         dest: "{{ install_dir }}/grails-{{ grails_version }}.zip"
+
+    - name: Create directory for JDK7
+      file:
+        path: "{{ install_dir }}/jdk7"
+        state: directory
+        mode: '0755'
+        recurse: yes
+
+    - name: Create directory for JDK8
+      file:
+        path: "{{ install_dir }}/jdk8"
+        state: directory
+        mode: '0755'
+        recurse: yes
 
     - name: Extract OpenJDK 7
       unarchive:
@@ -128,6 +110,11 @@
         dest: "{{ install_dir }}/grails"
         remote_src: yes
 
+    - name: Remove existing JDK7 directory
+      file:
+        path: "{{ symlink_dir }}/jdk7"
+        state: absent
+
     - name: Create symbolic link for JDK7 directory
       file:
         src: "{{ install_dir }}/jdk7"
@@ -135,6 +122,11 @@
         state: link
         owner: ubuntu
         group: ubuntu
+
+    - name: Remove existing JDK8 directory
+      file:
+        path: "{{ symlink_dir }}/jdk8"
+        state: absent
 
     - name: Create symbolic link for JDK8 directory
       file:

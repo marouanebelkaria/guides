@@ -2,7 +2,7 @@
 - name: Setup Development Environment in /applis/bin
   hosts: localhost
   become: yes
-  connection: local  # Ajouté pour exécuter en local sans SSH
+  connection: local
 
   vars:
     jdk7_version: "7u80-b15"
@@ -12,7 +12,7 @@
     grails_version: "2.2.0"
     install_dir: "/applis/bin"
     java_download_url: "https://download.oracle.com/otn-pub/java/jdk"
-    maven_download_url: "https://apache.mirror.digitalpacific.com.au/maven/maven-3/{{ maven_version }}/binaries/apache-maven-{{ maven_version }}-bin.zip"
+    maven_download_url: "https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/{{ maven_version }}/apache-maven-{{ maven_version }}-bin.zip"
     sonar_download_url: "https://binaries.sonarsource.com/Distribution/sonarqube/{{ sonar_version }}.zip"
     grails_download_url: "https://github.com/grails/grails-core/releases/download/v{{ grails_version }}/grails-{{ grails_version }}.zip"
     symlink_dir: "/home/ubuntu/bin"

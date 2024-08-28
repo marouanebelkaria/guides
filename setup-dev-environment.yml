@@ -62,6 +62,18 @@
         url: "{{ grails_download_url }}"
         dest: "{{ install_dir }}/grails-{{ grails_version }}.zip"
 
+    - name: Create directory for JDK7
+      file:
+        path: "{{ install_dir }}/jdk7"
+        state: directory
+        mode: '0755'
+
+    - name: Create directory for JDK8
+      file:
+        path: "{{ install_dir }}/jdk8"
+        state: directory
+        mode: '0755'
+
     - name: Extract OpenJDK 7
       unarchive:
         src: "{{ install_dir }}/jdk7.tar.gz"
@@ -96,27 +108,15 @@
         dest: "{{ install_dir }}/grails"
         remote_src: yes
 
-    - name: Ensure JDK7 extraction is successful
-      stat:
-        path: "{{ install_dir }}/jdk7/bin/java"
-      register: jdk7_check
-
-    - name: Ensure JDK8 extraction is successful
-      stat:
-        path: "{{ install_dir }}/jdk8/bin/java"
-      register: jdk8_check
-
     - name: Remove existing JDK7 directory if it's not correctly extracted or is a symlink
       file:
         path: "{{ symlink_dir }}/jdk7"
         state: absent
-      when: jdk7_check.stat.exists == False or jdk7_check.stat.islnk == True
 
     - name: Remove existing JDK8 directory if it's not correctly extracted or is a symlink
       file:
         path: "{{ symlink_dir }}/jdk8"
         state: absent
-      when: jdk8_check.stat.exists == False or jdk8_check.stat.islnk == True
 
     - name: Create symbolic link for JDK7 directory
       file:
@@ -125,7 +125,6 @@
         state: link
         owner: ubuntu
         group: ubuntu
-      when: jdk7_check.stat.exists == True
 
     - name: Create symbolic link for JDK8 directory
       file:
@@ -134,7 +133,6 @@
         state: link
         owner: ubuntu
         group: ubuntu
-      when: jdk8_check.stat.exists == True
 
     - name: Create symbolic link for Maven
       file:

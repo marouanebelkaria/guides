@@ -124,35 +124,12 @@
         dest: "{{ install_dir }}/grails"
         remote_src: yes
 
-    - name: Set JAVA_HOME for JDK7
-      lineinfile:
-        path: /etc/environment
-        regexp: '^JAVA_HOME='
-        line: 'JAVA_HOME={{ install_dir }}/jdk7'
-        state: present
-
-    - name: Set environment variables for Maven and Grails
-      blockinfile:
-        path: /home/ubuntu/.bashrc
-        block: |
-          export M2_HOME={{ install_dir }}/maven
-          export GRAILS_HOME={{ install_dir }}/grails
-          export PATH=$PATH:$M2_HOME/bin:$GRAILS_HOME/bin
-        owner: ubuntu
-        group: ubuntu
-
-    - name: Create SonarQube user
-      user:
-        name: sonar
-        home: "{{ install_dir }}/sonar"
-        shell: /bin/bash
-
-    - name: Change ownership of SonarQube directory
+    - name: Remove existing JDK7 directory to create symlink
       file:
-        path: "{{ install_dir }}/sonar"
-        owner: sonar
-        group: sonar
-        recurse: yes
+        path: "{{ symlink_dir }}/jdk7"
+        state: absent
+      when: 
+        - ansible_facts['os_family'] == "Debian"
 
     - name: Create symbolic link for JDK7
       file:

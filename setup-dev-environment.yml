@@ -5,9 +5,7 @@
   connection: local
 
   vars:
-    # Utiliser Azul Zulu pour OpenJDK 7
     jdk7_url: "https://cdn.azul.com/zulu/bin/zulu7.56.0.11-ca-jdk7.0.352-linux_x64.tar.gz"
-    # Utiliser Adoptium pour OpenJDK 8
     jdk8_url: "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u352-b08/OpenJDK8U-jdk_x64_linux_hotspot_8u352b08.tar.gz"
     maven_version: "3.8.5"
     sonar_version: "sonarqube-9.8.0.63668"
@@ -35,6 +33,18 @@
           - wget
           - unzip
         state: present
+
+    - name: Create directory for JDK7
+      file:
+        path: "{{ install_dir }}/jdk7"
+        state: directory
+        mode: '0755'
+
+    - name: Create directory for JDK8
+      file:
+        path: "{{ install_dir }}/jdk8"
+        state: directory
+        mode: '0755'
 
     - name: Download OpenJDK 7
       get_url:

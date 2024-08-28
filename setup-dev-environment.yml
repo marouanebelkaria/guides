@@ -111,21 +111,18 @@
         src: "{{ install_dir }}/apache-maven-{{ maven_version }}-bin.zip"
         dest: "{{ install_dir }}/maven"
         remote_src: yes
-        extra_opts: [--strip-components=1]
 
     - name: Extract SonarQube
       unarchive:
         src: "{{ install_dir }}/{{ sonar_version }}.zip"
         dest: "{{ install_dir }}/sonar"
         remote_src: yes
-        extra_opts: [--strip-components=1]
 
     - name: Extract Grails
       unarchive:
         src: "{{ install_dir }}/grails-{{ grails_version }}.zip"
         dest: "{{ install_dir }}/grails"
         remote_src: yes
-        extra_opts: [--strip-components=1]
 
     - name: Set JAVA_HOME for JDK7
       lineinfile:

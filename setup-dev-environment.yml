@@ -37,36 +37,6 @@
           - tar
         state: present
 
-    - name: Create directory for JDK7
-      file:
-        path: "{{ install_dir }}/jdk7"
-        state: directory
-        mode: '0755'
-
-    - name: Create directory for JDK8
-      file:
-        path: "{{ install_dir }}/jdk8"
-        state: directory
-        mode: '0755'
-
-    - name: Create directory for Maven
-      file:
-        path: "{{ install_dir }}/maven"
-        state: directory
-        mode: '0755'
-
-    - name: Create directory for SonarQube
-      file:
-        path: "{{ install_dir }}/sonar"
-        state: directory
-        mode: '0755'
-
-    - name: Create directory for Grails
-      file:
-        path: "{{ install_dir }}/grails"
-        state: directory
-        mode: '0755'
-
     - name: Download OpenJDK 7
       get_url:
         url: "{{ jdk7_url }}"
@@ -142,7 +112,6 @@
       file:
         path: "{{ symlink_dir }}/jdk8"
         state: absent
-      when: ls_jdk7.stdout.find('bin') != -1
 
     - name: Create symbolic link for JDK7 directory
       file:
@@ -151,7 +120,7 @@
         state: link
         owner: ubuntu
         group: ubuntu
-      when: ls_jdk7.stdout.find('bin') != -1
+      when: ls_jdk7 is defined and ls_jdk7.stdout.find('bin') != -1
 
     - name: Create symbolic link for JDK8 directory
       file:
@@ -160,6 +129,7 @@
         state: link
         owner: ubuntu
         group: ubuntu
+      when: ls_jdk7 is defined and ls_jdk7.stdout.find('bin') != -1
 
     - name: Create symbolic link for Maven
       file:

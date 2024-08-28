@@ -37,6 +37,38 @@
           - tar
         state: present
 
+    - name: Create directory for JDK7
+      file:
+        path: "{{ install_dir }}/jdk7"
+        state: directory
+        mode: '0755'
+        recurse: yes
+
+    - name: Create directory for JDK8
+      file:
+        path: "{{ install_dir }}/jdk8"
+        state: directory
+        mode: '0755'
+        recurse: yes
+
+    - name: Create directory for Maven
+      file:
+        path: "{{ install_dir }}/maven"
+        state: directory
+        mode: '0755'
+
+    - name: Create directory for SonarQube
+      file:
+        path: "{{ install_dir }}/sonar"
+        state: directory
+        mode: '0755'
+
+    - name: Create directory for Grails
+      file:
+        path: "{{ install_dir }}/grails"
+        state: directory
+        mode: '0755'
+
     - name: Download OpenJDK 7
       get_url:
         url: "{{ jdk7_url }}"
@@ -67,6 +99,7 @@
         src: "{{ install_dir }}/jdk7.tar.gz"
         dest: "{{ install_dir }}/jdk7"
         remote_src: yes
+        creates: "{{ install_dir }}/jdk7/bin"
         extra_opts: [--strip-components=1]
 
     - name: Extract OpenJDK 8
@@ -74,6 +107,7 @@
         src: "{{ install_dir }}/jdk8.tar.gz"
         dest: "{{ install_dir }}/jdk8"
         remote_src: yes
+        creates: "{{ install_dir }}/jdk8/bin"
         extra_opts: [--strip-components=1]
 
     - name: Extract Maven
@@ -94,25 +128,6 @@
         dest: "{{ install_dir }}/grails"
         remote_src: yes
 
-    - name: List contents of JDK7 directory for debugging
-      command: "ls -la {{ install_dir }}/jdk7"
-      register: ls_jdk7
-
-    - name: Debug output of JDK7 directory listing
-      debug:
-        var: ls_jdk7.stdout_lines
-
-    - name: Ensure existing JDK7 symlink is removed
-      file:
-        path: "{{ symlink_dir }}/jdk7"
-        state: absent
-      when: ls_jdk7.stdout.find('bin') != -1
-
-    - name: Ensure existing JDK8 symlink is removed
-      file:
-        path: "{{ symlink_dir }}/jdk8"
-        state: absent
-
     - name: Create symbolic link for JDK7 directory
       file:
         src: "{{ install_dir }}/jdk7"
@@ -120,7 +135,6 @@
         state: link
         owner: ubuntu
         group: ubuntu
-      when: ls_jdk7 is defined and ls_jdk7.stdout.find('bin') != -1
 
     - name: Create symbolic link for JDK8 directory
       file:
@@ -129,7 +143,6 @@
         state: link
         owner: ubuntu
         group: ubuntu
-      when: ls_jdk7 is defined and ls_jdk7.stdout.find('bin') != -1
 
     - name: Create symbolic link for Maven
       file:

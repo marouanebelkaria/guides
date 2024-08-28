@@ -1,0 +1,171 @@
+---
+- name: Setup Development Environment in /applis/bin
+  hosts: localhost
+  become: yes
+  vars:
+    jdk7_version: "7u80-b15"
+    jdk8_version: "8u202-b08"
+    maven_version: "3.8.5"
+    sonar_version: "sonarqube-9.8.0.63668"
+    grails_version: "2.2.0"
+    install_dir: "/applis/bin"
+    java_download_url: "https://download.oracle.com/otn-pub/java/jdk"
+    maven_download_url: "https://apache.mirror.digitalpacific.com.au/maven/maven-3/{{ maven_version }}/binaries/apache-maven-{{ maven_version }}-bin.zip"
+    sonar_download_url: "https://binaries.sonarsource.com/Distribution/sonarqube/{{ sonar_version }}.zip"
+    grails_download_url: "https://github.com/grails/grails-core/releases/download/v{{ grails_version }}/grails-{{ grails_version }}.zip"
+    symlink_dir: "/home/ubuntu/bin"
+
+  tasks:
+    - name: Create base directory for applications
+      file:
+        path: "{{ install_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Create directory for user symlinks
+      file:
+        path: "{{ symlink_dir }}"
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
+
+    - name: Install wget and unzip
+      apt:
+        name:
+          - wget
+          - unzip
+        state: present
+
+    - name: Download JDK7
+      get_url:
+        url: "{{ java_download_url }}/{{ jdk7_version }}/jdk-{{ jdk7_version }}-linux-x64.tar.gz"
+        dest: "{{ install_dir }}/jdk7.tar.gz"
+
+    - name: Download JDK8
+      get_url:
+        url: "{{ java_download_url }}/{{ jdk8_version }}/jdk-{{ jdk8_version }}-linux-x64.tar.gz"
+        dest: "{{ install_dir }}/jdk8.tar.gz"
+
+    - name: Download Maven
+      get_url:
+        url: "{{ maven_download_url }}"
+        dest: "{{ install_dir }}/apache-maven-{{ maven_version }}-bin.zip"
+
+    - name: Download SonarQube
+      get_url:
+        url: "{{ sonar_download_url }}"
+        dest: "{{ install_dir }}/{{ sonar_version }}.zip"
+
+    - name: Download Grails
+      get_url:
+        url: "{{ grails_download_url }}"
+        dest: "{{ install_dir }}/grails-{{ grails_version }}.zip"
+
+    - name: Extract JDK7
+      unarchive:
+        src: "{{ install_dir }}/jdk7.tar.gz"
+        dest: "{{ install_dir }}"
+        remote_src: yes
+
+    - name: Extract JDK8
+      unarchive:
+        src: "{{ install_dir }}/jdk8.tar.gz"
+        dest: "{{ install_dir }}"
+        remote_src: yes
+
+    - name: Extract Maven
+      unarchive:
+        src: "{{ install_dir }}/apache-maven-{{ maven_version }}-bin.zip"
+        dest: "{{ install_dir }}"
+        remote_src: yes
+
+    - name: Extract SonarQube
+      unarchive:
+        src: "{{ install_dir }}/{{ sonar_version }}.zip"
+        dest: "{{ install_dir }}"
+        remote_src: yes
+
+    - name: Extract Grails
+      unarchive:
+        src: "{{ install_dir }}/grails-{{ grails_version }}.zip"
+        dest: "{{ install_dir }}"
+        remote_src: yes
+
+    - name: Set JAVA_HOME for JDK7
+      lineinfile:
+        path: /etc/environment
+        regexp: '^JAVA_HOME='
+        line: 'JAVA_HOME={{ install_dir }}/jdk1.7.0_80'
+        state: present
+
+    - name: Set environment variables for Maven and Grails
+      blockinfile:
+        path: /home/ubuntu/.bashrc
+        block: |
+          export M2_HOME={{ install_dir }}/apache-maven-{{ maven_version }}
+          export GRAILS_HOME={{ install_dir }}/grails-{{ grails_version }}
+          export PATH=$PATH:$M2_HOME/bin:$GRAILS_HOME/bin
+        owner: ubuntu
+        group: ubuntu
+
+    - name: Create SonarQube user
+      user:
+        name: sonar
+        home: "{{ install_dir }}/{{ sonar_version }}"
+        shell: /bin/bash
+
+    - name: Change ownership of SonarQube directory
+      file:
+        path: "{{ install_dir }}/{{ sonar_version }}"
+        owner: sonar
+        group: sonar
+        recurse: yes
+
+    - name: Create symbolic link for JDK7
+      file:
+        src: "{{ install_dir }}/jdk1.7.0_80/bin/java"
+        dest: "{{ symlink_dir }}/java-7"
+        state: link
+        owner: ubuntu
+        group: ubuntu
+
+    - name: Create symbolic link for JDK8
+      file:
+        src: "{{ install_dir }}/jdk1.8.0_202/bin/java"
+        dest: "{{ symlink_dir }}/java-8"
+        state: link
+        owner: ubuntu
+        group: ubuntu
+
+    - name: Create symbolic link for Maven
+      file:
+        src: "{{ install_dir }}/apache-maven-{{ maven_version }}/bin/mvn"
+        dest: "{{ symlink_dir }}/mvn-{{ maven_version }}"
+        state: link
+        owner: ubuntu
+        group: ubuntu
+
+    - name: Create symbolic link for Grails
+      file:
+        src: "{{ install_dir }}/grails-{{ grails_version }}/bin/grails"
+        dest: "{{ symlink_dir }}/grails-{{ grails_version }}"
+        state: link
+        owner: ubuntu
+        group: ubuntu
+
+    - name: Start SonarQube service
+      shell: "nohup {{ install_dir }}/{{ sonar_version }}/bin/linux-x86-64/sonar.sh start &"
+      args:
+        chdir: "{{ install_dir }}/{{ sonar_version }}"
+
+    - name: Clean up temporary files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ install_dir }}/jdk7.tar.gz"
+        - "{{ install_dir }}/jdk8.tar.gz"
+        - "{{ install_dir }}/apache-maven-{{ maven_version }}-bin.zip"
+        - "{{ install_dir }}/{{ sonar_version }}.zip"
+        - "{{ install_dir }}/grails-{{ grails_version }}.zip"

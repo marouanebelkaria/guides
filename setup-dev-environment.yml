@@ -137,18 +137,22 @@
         path: "{{ symlink_dir }}/jdk7"
         state: absent
 
-    - name: Create symbolic link for JDK7
+    - name: Remove existing JDK8 directory to create symlink
       file:
-        src: "{{ install_dir }}/jdk7/bin/java"
+        path: "{{ symlink_dir }}/jdk8"
+        state: absent
+
+    - name: Create symbolic link for JDK7 directory
+      file:
+        src: "{{ install_dir }}/jdk7"
         dest: "{{ symlink_dir }}/jdk7"
         state: link
         owner: ubuntu
         group: ubuntu
-      when: ls_jdk7.stdout.find('bin/java') != -1
 
-    - name: Create symbolic link for JDK8
+    - name: Create symbolic link for JDK8 directory
       file:
-        src: "{{ install_dir }}/jdk8/bin/java"
+        src: "{{ install_dir }}/jdk8"
         dest: "{{ symlink_dir }}/jdk8"
         state: link
         owner: ubuntu

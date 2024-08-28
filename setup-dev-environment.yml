@@ -36,14 +36,9 @@
         name:
           - wget
           - unzip
-          - openjdk-7-jdk
+          - openjdk-8-jdk
         state: present
         update_cache: yes
-
-    - name: Download JDK8
-      get_url:
-        url: "{{ java_download_url }}/{{ jdk8_version }}/jdk-{{ jdk8_version }}-linux-x64.tar.gz"
-        dest: "{{ install_dir }}/jdk8.tar.gz"
 
     - name: Download Maven
       get_url:
@@ -59,12 +54,6 @@
       get_url:
         url: "{{ grails_download_url }}"
         dest: "{{ install_dir }}/grails-{{ grails_version }}.zip"
-
-    - name: Extract JDK8
-      unarchive:
-        src: "{{ install_dir }}/jdk8.tar.gz"
-        dest: "{{ install_dir }}"
-        remote_src: yes
 
     - name: Extract Maven
       unarchive:
@@ -84,11 +73,11 @@
         dest: "{{ install_dir }}"
         remote_src: yes
 
-    - name: Set JAVA_HOME for JDK7
+    - name: Set JAVA_HOME for JDK8
       lineinfile:
         path: /etc/environment
         regexp: '^JAVA_HOME='
-        line: 'JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64'
+        line: 'JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64'
         state: present
 
     - name: Set environment variables for Maven and Grails
@@ -114,17 +103,9 @@
         group: sonar
         recurse: yes
 
-    - name: Create symbolic link for JDK7
-      file:
-        src: "/usr/lib/jvm/java-7-openjdk-amd64/bin/java"
-        dest: "{{ symlink_dir }}/java-7"
-        state: link
-        owner: ubuntu
-        group: ubuntu
-
     - name: Create symbolic link for JDK8
       file:
-        src: "{{ install_dir }}/jdk1.8.0_202/bin/java"
+        src: "/usr/lib/jvm/java-8-openjdk-amd64/bin/java"
         dest: "{{ symlink_dir }}/java-8"
         state: link
         owner: ubuntu
@@ -156,7 +137,6 @@
         path: "{{ item }}"
         state: absent
       loop:
-        - "{{ install_dir }}/jdk8.tar.gz"
         - "{{ install_dir }}/apache-maven-{{ maven_version }}-bin.zip"
         - "{{ install_dir }}/{{ sonar_version }}.zip"
         - "{{ install_dir }}/grails-{{ grails_version }}.zip"

@@ -62,13 +62,13 @@
         url: "{{ grails_download_url }}"
         dest: "{{ install_dir }}/grails-{{ grails_version }}.zip"
 
-    - name: Create directory for JDK7
+    - name: Create directory for JDK7 if not exists
       file:
         path: "{{ install_dir }}/jdk7"
         state: directory
         mode: '0755'
 
-    - name: Create directory for JDK8
+    - name: Create directory for JDK8 if not exists
       file:
         path: "{{ install_dir }}/jdk8"
         state: directory
@@ -108,31 +108,35 @@
         dest: "{{ install_dir }}/grails"
         remote_src: yes
 
-    - name: Remove existing JDK7 directory if it's not correctly extracted or is a symlink
-      file:
-        path: "{{ symlink_dir }}/jdk7"
-        state: absent
+    - name: Ensure JDK7 extraction is successful
+      stat:
+        path: "{{ install_dir }}/jdk7/bin/java"
+      register: jdk7_check
 
-    - name: Remove existing JDK8 directory if it's not correctly extracted or is a symlink
-      file:
-        path: "{{ symlink_dir }}/jdk8"
-        state: absent
+    - name: Ensure JDK8 extraction is successful
+      stat:
+        path: "{{ install_dir }}/jdk8/bin/java"
+      register: jdk8_check
 
-    - name: Create symbolic link for JDK7 directory
+    - name: Create symbolic link for JDK7 directory if it does not already exist
       file:
         src: "{{ install_dir }}/jdk7"
         dest: "{{ symlink_dir }}/jdk7"
         state: link
+        force: yes
         owner: ubuntu
         group: ubuntu
+      when: jdk7_check.stat.exists == True and jdk7_check.stat.islnk == False
 
-    - name: Create symbolic link for JDK8 directory
+    - name: Create symbolic link for JDK8 directory if it does not already exist
       file:
         src: "{{ install_dir }}/jdk8"
         dest: "{{ symlink_dir }}/jdk8"
         state: link
+        force: yes
         owner: ubuntu
         group: ubuntu
+      when: jdk8_check.stat.exists == True and jdk8_check.stat.islnk == False
 
     - name: Create symbolic link for Maven
       file:

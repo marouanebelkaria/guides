@@ -2,6 +2,8 @@
 - name: Setup Development Environment in /applis/bin
   hosts: localhost
   become: yes
+  connection: local  # Ajouté pour exécuter en local sans SSH
+
   vars:
     jdk7_version: "7u80-b15"
     jdk8_version: "8u202-b08"

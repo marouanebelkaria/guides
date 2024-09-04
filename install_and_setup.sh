@@ -9,7 +9,7 @@ sudo apt update
 
 # Installer Ansible
 echo "Installation d'Ansible..."
-sudo apt install -y ansible unzip
+sudo apt install -y ansible unzip wget
 
 # Créer l'utilisateur jenkins-slave s'il n'existe pas
 if id "jenkins-slave" &>/dev/null; then
@@ -41,7 +41,7 @@ cat <<EOL > playbook.yml
     sonarqube_version: "9.9.3.79811"
     sonarqube_url: "https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-{{ sonarqube_version }}.zip"
     jdk11_package: "openjdk-11-jdk"
-    jdk7_package: "openjdk-7-jdk"
+    jdk7_url: "https://cdn.azul.com/zulu/bin/zulu7.48.0.11-ca-jdk7.0.352-linux_x64.tar.gz"
     grails_version: "2.2.0"
     grails_url: "https://github.com/grails/grails-core/releases/download/v{{ grails_version }}/grails-{{ grails_version }}.zip"
     maven_version: "3.8.8"
@@ -59,23 +59,27 @@ cat <<EOL > playbook.yml
         name: "{{ jdk11_package }}"
         state: present
 
-    - name: Installer JDK 7
-      apt:
-        name: "{{ jdk7_package }}"
-        state: present
-
-    - name: Installer des dépendances requises pour SonarQube
-      apt:
-        name: 
-          - openjdk-11-jre
-          - unzip
-          - wget
-        state: present
-
     - name: Créer le répertoire d'installation
       file:
         path: "{{ install_dir }}"
         state: directory
+        owner: "{{ user }}"
+        group: "{{ user }}"
+
+    - name: Télécharger JDK 7 depuis Azul Zulu
+      become: yes
+      become_user: "{{ user }}"
+      get_url:
+        url: "{{ jdk7_url }}"
+        dest: "/tmp/zulu7-jdk.tar.gz"
+
+    - name: Extraire JDK 7
+      become: yes
+      become_user: "{{ user }}"
+      unarchive:
+        src: "/tmp/zulu7-jdk.tar.gz"
+        dest: "{{ install_dir }}"
+        remote_src: yes
         owner: "{{ user }}"
         group: "{{ user }}"
 
@@ -160,6 +164,7 @@ cat <<EOL > playbook.yml
         path: "{{ item }}"
         state: absent
       loop:
+        - "/tmp/zulu7-jdk.tar.gz"
         - "/tmp/sonarqube-{{ sonarqube_version }}.zip"
         - "/tmp/grails-{{ grails_version }}.zip"
         - "/tmp/apache-maven-{{ maven_version }}.tar.gz"
@@ -170,7 +175,7 @@ cat <<EOL > playbook.yml
       become_user: "{{ user }}"
       lineinfile:
         path: "/home/{{ user }}/.bashrc"
-        line: "export PATH=\$PATH:{{ install_dir }}/jdk1.7.0_75/bin:{{ install_dir }}/grails-{{ grails_version }}/bin:{{ install_dir }}/apache-maven-{{ maven_version }}/bin:{{ install_dir }}/sonar-scanner-{{ sonar_scanner_version }}/bin"
+        line: "export PATH=\$PATH:{{ install_dir }}/zulu7.48.0.11-ca-jdk7.0.352-linux_x64/bin:{{ install_dir }}/grails-{{ grails_version }}/bin:{{ install_dir }}/apache-maven-{{ maven_version }}/bin:{{ install_dir }}/sonar-scanner-{{ sonar_scanner_version }}/bin"
         state: present
 
     - name: Recharger le shell

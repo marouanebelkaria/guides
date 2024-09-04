@@ -1,15 +1,12 @@
 #!/bin/bash
 
-# Script pour installer Ansible, créer l'utilisateur jenkins-slave, installer SonarQube, JDK, Grails, Maven, et Sonar Scanner
-# Puis créer une application Grails, compiler, tester, générer un rapport Cobertura, et analyser avec SonarQube
-
 # Mettre à jour la liste des paquets
 echo "Mise à jour de la liste des paquets..."
 sudo apt update
 
-# Installer Ansible
-echo "Installation d'Ansible..."
-sudo apt install -y ansible unzip wget
+# Installer Ansible et les dépendances nécessaires
+echo "Installation d'Ansible et des dépendances nécessaires..."
+sudo apt install -y ansible unzip wget curl
 
 # Créer l'utilisateur jenkins-slave s'il n'existe pas
 if id "jenkins-slave" &>/dev/null; then
@@ -27,7 +24,7 @@ cat <<EOL > hosts.ini
 localhost ansible_connection=local ansible_user=jenkins-slave
 EOL
 
-# Créer le playbook Ansible
+# Créer le playbook Ansible simplifié
 echo "Création du playbook Ansible..."
 cat <<EOL > playbook.yml
 ---
@@ -40,7 +37,6 @@ cat <<EOL > playbook.yml
     grails_app_dir: "/home/{{ user }}/grails-app"
     sonarqube_version: "9.9.3.79811"
     sonarqube_url: "https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-{{ sonarqube_version }}.zip"
-    jdk11_package: "openjdk-11-jdk"
     jdk7_url: "https://cdn.azul.com/zulu/bin/zulu7.48.0.11-ca-jdk7.0.352-linux_x64.tar.gz"
     grails_version: "2.2.0"
     grails_url: "https://github.com/grails/grails-core/releases/download/v{{ grails_version }}/grails-{{ grails_version }}.zip"
@@ -54,11 +50,6 @@ cat <<EOL > playbook.yml
       apt:
         update_cache: yes
 
-    - name: Installer JDK 11
-      apt:
-        name: "{{ jdk11_package }}"
-        state: present
-
     - name: Créer le répertoire d'installation
       file:
         path: "{{ install_dir }}"
@@ -66,96 +57,84 @@ cat <<EOL > playbook.yml
         owner: "{{ user }}"
         group: "{{ user }}"
 
-    - name: Télécharger JDK 7 depuis Azul Zulu
+    - name: Télécharger et extraire JDK 7
       become: yes
       become_user: "{{ user }}"
-      get_url:
-        url: "{{ jdk7_url }}"
-        dest: "/tmp/zulu7-jdk.tar.gz"
+      block:
+        - get_url:
+            url: "{{ jdk7_url }}"
+            dest: "/tmp/zulu7-jdk.tar.gz"
 
-    - name: Extraire JDK 7
+        - unarchive:
+            src: "/tmp/zulu7-jdk.tar.gz"
+            dest: "{{ install_dir }}"
+            remote_src: yes
+            owner: "{{ user }}"
+            group: "{{ user }}"
+
+    - name: Télécharger et extraire SonarQube
       become: yes
       become_user: "{{ user }}"
-      unarchive:
-        src: "/tmp/zulu7-jdk.tar.gz"
-        dest: "{{ install_dir }}"
-        remote_src: yes
-        owner: "{{ user }}"
-        group: "{{ user }}"
+      block:
+        - get_url:
+            url: "{{ sonarqube_url }}"
+            dest: "/tmp/sonarqube-{{ sonarqube_version }}.zip"
 
-    - name: Télécharger SonarQube
+        - unarchive:
+            src: "/tmp/sonarqube-{{ sonarqube_version }}.zip"
+            dest: "{{ install_dir }}"
+            remote_src: yes
+            owner: "{{ user }}"
+            group: "{{ user }}"
+
+    - name: Démarrer SonarQube
+      shell: "{{ install_dir }}/sonarqube-{{ sonarqube_version }}/bin/linux-x86-64/sonar.sh start"
+      become: yes
+
+    - name: Télécharger et extraire Grails
       become: yes
       become_user: "{{ user }}"
-      get_url:
-        url: "{{ sonarqube_url }}"
-        dest: "/tmp/sonarqube-{{ sonarqube_version }}.zip"
+      block:
+        - get_url:
+            url: "{{ grails_url }}"
+            dest: "/tmp/grails-{{ grails_version }}.zip"
 
-    - name: Extraire SonarQube
+        - unarchive:
+            src: "/tmp/grails-{{ grails_version }}.zip"
+            dest: "{{ install_dir }}"
+            remote_src: yes
+            owner: "{{ user }}"
+            group: "{{ user }}"
+
+    - name: Télécharger et extraire Maven
       become: yes
       become_user: "{{ user }}"
-      unarchive:
-        src: "/tmp/sonarqube-{{ sonarqube_version }}.zip"
-        dest: "{{ install_dir }}"
-        remote_src: yes
-        owner: "{{ user }}"
-        group: "{{ user }}"
+      block:
+        - get_url:
+            url: "{{ maven_url }}"
+            dest: "/tmp/apache-maven-{{ maven_version }}.tar.gz"
 
-    - name: Configurer SonarQube
-      shell: |
-        cd {{ install_dir }}/sonarqube-{{ sonarqube_version }}
-        sudo bin/linux-x86-64/sonar.sh start
-      become: yes
+        - unarchive:
+            src: "/tmp/apache-maven-{{ maven_version }}.tar.gz"
+            dest: "{{ install_dir }}"
+            remote_src: yes
+            owner: "{{ user }}"
+            group: "{{ user }}"
 
-    - name: Télécharger Grails
-      become: yes
-      become_user: "{{ user }}"
-      get_url:
-        url: "{{ grails_url }}"
-        dest: "/tmp/grails-{{ grails_version }}.zip"
-
-    - name: Extraire Grails
+    - name: Télécharger et extraire Sonar Scanner
       become: yes
       become_user: "{{ user }}"
-      unarchive:
-        src: "/tmp/grails-{{ grails_version }}.zip"
-        dest: "{{ install_dir }}"
-        remote_src: yes
-        owner: "{{ user }}"
-        group: "{{ user }}"
+      block:
+        - get_url:
+            url: "{{ sonar_scanner_url }}"
+            dest: "/tmp/sonar-scanner-cli-{{ sonar_scanner_version }}.zip"
 
-    - name: Télécharger Maven
-      become: yes
-      become_user: "{{ user }}"
-      get_url:
-        url: "{{ maven_url }}"
-        dest: "/tmp/apache-maven-{{ maven_version }}.tar.gz"
-
-    - name: Extraire Maven
-      become: yes
-      become_user: "{{ user }}"
-      unarchive:
-        src: "/tmp/apache-maven-{{ maven_version }}.tar.gz"
-        dest: "{{ install_dir }}"
-        remote_src: yes
-        owner: "{{ user }}"
-        group: "{{ user }}"
-
-    - name: Télécharger Sonar Scanner
-      become: yes
-      become_user: "{{ user }}"
-      get_url:
-        url: "{{ sonar_scanner_url }}"
-        dest: "/tmp/sonar-scanner-cli-{{ sonar_scanner_version }}.zip"
-
-    - name: Extraire Sonar Scanner
-      become: yes
-      become_user: "{{ user }}"
-      unarchive:
-        src: "/tmp/sonar-scanner-cli-{{ sonar_scanner_version }}.zip"
-        dest: "{{ install_dir }}"
-        remote_src: yes
-        owner: "{{ user }}"
-        group: "{{ user }}"
+        - unarchive:
+            src: "/tmp/sonar-scanner-cli-{{ sonar_scanner_version }}.zip"
+            dest: "{{ install_dir }}"
+            remote_src: yes
+            owner: "{{ user }}"
+            group: "{{ user }}"
 
     - name: Nettoyer les fichiers temporaires
       become: yes

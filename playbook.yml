@@ -8,6 +8,7 @@
     sonarqube_version: "9.9.3.79811"
     sonarqube_url: "https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-{{ sonarqube_version }}.zip"
     jdk7_url: "https://cdn.azul.com/zulu/bin/zulu7.56.0.11-ca-jdk7.0.352-linux_x64.tar.gz"
+    jdk11_package: "openjdk-11-jdk"
     grails_version: "2.2.0"
     grails_url: "https://github.com/grails/grails-core/releases/download/v{{ grails_version }}/grails-{{ grails_version }}.zip"
     maven_version: "3.8.8"
@@ -20,6 +21,11 @@
     - name: Mettre à jour la liste des paquets
       apt:
         update_cache: yes
+
+    - name: Installer JDK 11
+      apt:
+        name: "{{ jdk11_package }}"
+        state: present
 
     - name: Créer le répertoire d'installation
       file:

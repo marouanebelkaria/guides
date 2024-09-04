@@ -1,9 +1,9 @@
 ---
-- name: Installer SonarQube, JDK, Grails, Maven, Sonar Scanner sur Ubuntu 24 avec jenkins-slave
-  hosts: all
+- name: Installer SonarQube, JDK, Grails, Maven, Sonar Scanner localement sur Ubuntu 24
+  hosts: localhost
+  connection: local
   become: yes
   vars:
-    user: "jenkins-slave"
     install_dir: "/applis/bin"
     sonarqube_version: "9.9.3.79811"
     sonarqube_url: "https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-{{ sonarqube_version }}.zip"
@@ -25,11 +25,8 @@
       file:
         path: "{{ install_dir }}"
         state: directory
-        owner: "{{ user }}"
-        group: "{{ user }}"
 
     - name: Télécharger et extraire JDK 7
-      become_user: "{{ user }}"
       block:
         - get_url:
             url: "{{ jdk7_url }}"
@@ -39,11 +36,8 @@
             src: "/tmp/zulu7-jdk.tar.gz"
             dest: "{{ install_dir }}"
             remote_src: yes
-            owner: "{{ user }}"
-            group: "{{ user }}"
 
     - name: Télécharger et extraire SonarQube
-      become_user: "{{ user }}"
       block:
         - get_url:
             url: "{{ sonarqube_url }}"
@@ -53,15 +47,11 @@
             src: "/tmp/sonarqube-{{ sonarqube_version }}.zip"
             dest: "{{ install_dir }}"
             remote_src: yes
-            owner: "{{ user }}"
-            group: "{{ user }}"
 
     - name: Démarrer SonarQube
       shell: "{{ install_dir }}/sonarqube-{{ sonarqube_version }}/bin/linux-x86-64/sonar.sh start"
-      become: yes
 
     - name: Télécharger et extraire Grails
-      become_user: "{{ user }}"
       block:
         - get_url:
             url: "{{ grails_url }}"
@@ -71,11 +61,8 @@
             src: "/tmp/grails-{{ grails_version }}.zip"
             dest: "{{ install_dir }}"
             remote_src: yes
-            owner: "{{ user }}"
-            group: "{{ user }}"
 
     - name: Télécharger et extraire Maven
-      become_user: "{{ user }}"
       block:
         - get_url:
             url: "{{ maven_url }}"
@@ -85,11 +72,8 @@
             src: "/tmp/apache-maven-{{ maven_version }}.tar.gz"
             dest: "{{ install_dir }}"
             remote_src: yes
-            owner: "{{ user }}"
-            group: "{{ user }}"
 
     - name: Télécharger et extraire Sonar Scanner
-      become_user: "{{ user }}"
       block:
         - get_url:
             url: "{{ sonar_scanner_url }}"
@@ -99,11 +83,8 @@
             src: "/tmp/sonar-scanner-cli-{{ sonar_scanner_version }}.zip"
             dest: "{{ install_dir }}"
             remote_src: yes
-            owner: "{{ user }}"
-            group: "{{ user }}"
 
     - name: Nettoyer les fichiers temporaires
-      become_user: "{{ user }}"
       file:
         path: "{{ item }}"
         state: absent
@@ -115,14 +96,12 @@
         - "/tmp/sonar-scanner-cli-{{ sonar_scanner_version }}.zip"
 
     - name: Ajouter JAVA_HOME et PATH à .bashrc
-      become_user: "{{ user }}"
       lineinfile:
-        path: "/home/{{ user }}/.bashrc"
+        path: "~/.bashrc"
         line: |
           export JAVA_HOME={{ java_home }}
           export PATH=\$PATH:{{ java_home }}/bin:{{ install_dir }}/grails-{{ grails_version }}/bin:{{ install_dir }}/apache-maven-{{ maven_version }}/bin:{{ install_dir }}/sonar-scanner-{{ sonar_scanner_version }}/bin
         state: present
 
     - name: Recharger le shell avec bash
-      become_user: "{{ user }}"
-      shell: "bash -lc 'source /home/{{ user }}/.bashrc'"
+      shell: "bash -lc 'source ~/.bashrc'"

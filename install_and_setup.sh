@@ -157,10 +157,10 @@ cat <<EOL > playbook.yml
         line: "export PATH=\$PATH:{{ install_dir }}/zulu7.56.0.11-ca-jdk7.0.352-linux_x64/bin:{{ install_dir }}/grails-{{ grails_version }}/bin:{{ install_dir }}/apache-maven-{{ maven_version }}/bin:{{ install_dir }}/sonar-scanner-{{ sonar_scanner_version }}/bin"
         state: present
 
-    - name: Recharger le shell
+    - name: Recharger le shell avec bash
       become: yes
       become_user: "{{ user }}"
-      shell: "source /home/{{ user }}/.bashrc"
+      shell: "bash -lc 'source /home/{{ user }}/.bashrc'"
 
     - name: Créer le répertoire de l'application Grails
       file:

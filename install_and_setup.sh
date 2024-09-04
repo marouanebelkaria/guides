@@ -41,7 +41,7 @@ cat <<EOL > playbook.yml
     sonarqube_version: "9.9.3.79811"
     sonarqube_url: "https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-{{ sonarqube_version }}.zip"
     jdk11_package: "openjdk-11-jdk"
-    jdk7_url: "https://download.oracle.com/otn/java/jdk/7u75-b13/jdk-7u75-linux-x64.tar.gz"
+    jdk7_package: "openjdk-7-jdk"
     grails_version: "2.2.0"
     grails_url: "https://github.com/grails/grails-core/releases/download/v{{ grails_version }}/grails-{{ grails_version }}.zip"
     maven_version: "3.8.8"
@@ -59,6 +59,11 @@ cat <<EOL > playbook.yml
         name: "{{ jdk11_package }}"
         state: present
 
+    - name: Installer JDK 7
+      apt:
+        name: "{{ jdk7_package }}"
+        state: present
+
     - name: Installer des dépendances requises pour SonarQube
       apt:
         name: 
@@ -71,23 +76,6 @@ cat <<EOL > playbook.yml
       file:
         path: "{{ install_dir }}"
         state: directory
-        owner: "{{ user }}"
-        group: "{{ user }}"
-
-    - name: Télécharger JDK 7
-      become: yes
-      become_user: "{{ user }}"
-      ansible.builtin.get_url:
-        url: "{{ jdk7_url }}"
-        dest: "/tmp/jdk-7.tar.gz"
-
-    - name: Extraire JDK 7
-      become: yes
-      become_user: "{{ user }}"
-      unarchive:
-        src: "/tmp/jdk-7.tar.gz"
-        dest: "{{ install_dir }}"
-        remote_src: yes
         owner: "{{ user }}"
         group: "{{ user }}"
 
@@ -172,7 +160,6 @@ cat <<EOL > playbook.yml
         path: "{{ item }}"
         state: absent
       loop:
-        - "/tmp/jdk-7.tar.gz"
         - "/tmp/sonarqube-{{ sonarqube_version }}.zip"
         - "/tmp/grails-{{ grails_version }}.zip"
         - "/tmp/apache-maven-{{ maven_version }}.tar.gz"

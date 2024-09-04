@@ -37,7 +37,7 @@ cat <<EOL > playbook.yml
     grails_app_dir: "/home/{{ user }}/grails-app"
     sonarqube_version: "9.9.3.79811"
     sonarqube_url: "https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-{{ sonarqube_version }}.zip"
-    jdk7_url: "https://cdn.azul.com/zulu/bin/zulu7.48.0.11-ca-jdk7.0.352-linux_x64.tar.gz"
+    jdk7_url: "https://cdn.azul.com/zulu/bin/zulu7.56.0.11-ca-jdk7.0.352-linux_x64.tar.gz"
     grails_version: "2.2.0"
     grails_url: "https://github.com/grails/grails-core/releases/download/v{{ grails_version }}/grails-{{ grails_version }}.zip"
     maven_version: "3.8.8"
@@ -154,7 +154,7 @@ cat <<EOL > playbook.yml
       become_user: "{{ user }}"
       lineinfile:
         path: "/home/{{ user }}/.bashrc"
-        line: "export PATH=\$PATH:{{ install_dir }}/zulu7.48.0.11-ca-jdk7.0.352-linux_x64/bin:{{ install_dir }}/grails-{{ grails_version }}/bin:{{ install_dir }}/apache-maven-{{ maven_version }}/bin:{{ install_dir }}/sonar-scanner-{{ sonar_scanner_version }}/bin"
+        line: "export PATH=\$PATH:{{ install_dir }}/zulu7.56.0.11-ca-jdk7.0.352-linux_x64/bin:{{ install_dir }}/grails-{{ grails_version }}/bin:{{ install_dir }}/apache-maven-{{ maven_version }}/bin:{{ install_dir }}/sonar-scanner-{{ sonar_scanner_version }}/bin"
         state: present
 
     - name: Recharger le shell

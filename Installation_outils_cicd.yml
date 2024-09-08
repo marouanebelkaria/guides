@@ -135,6 +135,19 @@
         groups: docker
         append: yes
 
+    # Modifier les permissions des répertoires pour permettre à jenkins-slave d'y écrire
+    - name: Appliquer les permissions correctes aux répertoires /app/bin et /app/versions
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ slave_user }}"
+        group: "{{ slave_user }}"
+        mode: '0755'
+      loop:
+        - "{{ app_bin_path }}"
+        - "{{ app_versions_path }}"
+      become: yes
+
     - name: Installer Docker Compose dans /app/versions et créer un lien symbolique
       become: no
       become_user: "{{ slave_user }}"

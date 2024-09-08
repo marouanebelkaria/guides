@@ -21,18 +21,14 @@
         name: gnupg
         state: present
 
-    - name: Download Jenkins GPG key
+    - name: Download Jenkins GPG key to /usr/share/keyrings
       ansible.builtin.get_url:
         url: https://pkg.jenkins.io/debian/jenkins.io.key
-        dest: /tmp/jenkins.io.key
-
-    - name: Add Jenkins GPG key
-      ansible.builtin.command:
-        cmd: "gpg --no-default-keyring --keyring /usr/share/keyrings/jenkins.gpg --import /tmp/jenkins.io.key"
+        dest: /usr/share/keyrings/jenkins-keyring.gpg
 
     - name: Add Jenkins apt repository
       ansible.builtin.apt_repository:
-        repo: "deb [signed-by=/usr/share/keyrings/jenkins.gpg] https://pkg.jenkins.io/debian-stable binary/"
+        repo: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.gpg] https://pkg.jenkins.io/debian-stable binary/"
         state: present
 
     - name: Update apt cache after adding Jenkins repository

@@ -135,7 +135,7 @@
         groups: docker
         append: yes
 
-    # Modifier les permissions des répertoires pour permettre à jenkins-slave d'y écrire
+    # Appliquer les permissions correctes aux répertoires pour permettre à jenkins-slave d'y écrire
     - name: Appliquer les permissions correctes aux répertoires /app/bin et /app/versions
       file:
         path: "{{ item }}"
@@ -149,8 +149,7 @@
       become: yes
 
     - name: Installer Docker Compose dans /app/versions et créer un lien symbolique
-      become: no
-      become_user: "{{ slave_user }}"
+      become: yes
       shell: |
         curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o {{ app_versions_path }}/docker-compose-1.29.2
         chmod +x {{ app_versions_path }}/docker-compose-1.29.2
@@ -159,8 +158,7 @@
         executable: /bin/bash
 
     - name: Installer Kubernetes Kubectl dans /app/versions et créer un lien symbolique
-      become: no
-      become_user: "{{ slave_user }}"
+      become: yes
       shell: |
         curl -L "https://storage.googleapis.com/kubernetes-release/release/v{{ kubectl_version }}/bin/linux/amd64/kubectl" -o {{ app_versions_path }}/kubectl-{{ kubectl_version }}
         chmod +x {{ app_versions_path }}/kubectl-{{ kubectl_version }}
@@ -169,8 +167,7 @@
         executable: /bin/bash
 
     - name: Installer Minikube dans /app/versions et créer un lien symbolique
-      become: no
-      become_user: "{{ slave_user }}"
+      become: yes
       shell: |
         curl -L "https://storage.googleapis.com/minikube/releases/{{ minikube_version }}/minikube-linux-amd64" -o {{ app_versions_path }}/minikube-{{ minikube_version }}
         chmod +x {{ app_versions_path }}/minikube-{{ minikube_version }}
@@ -179,8 +176,7 @@
         executable: /bin/bash
 
     - name: Installer Terraform dans /app/versions et créer un lien symbolique
-      become: no
-      become_user: "{{ slave_user }}"
+      become: yes
       shell: |
         wget https://releases.hashicorp.com/terraform/{{ terraform_version }}/terraform_{{ terraform_version }}_linux_amd64.zip
         unzip terraform_{{ terraform_version }}_linux_amd64.zip
@@ -202,8 +198,7 @@
         state: present
 
     - name: Installer Prometheus dans /app/versions et créer un lien symbolique
-      become: no
-      become_user: "{{ slave_user }}"
+      become: yes
       shell: |
         wget https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-amd64.tar.gz
         tar xvf prometheus-{{ prometheus_version }}.linux-amd64.tar.gz
@@ -242,22 +237,16 @@
         enabled: yes
 
     - name: Installer Maven en tant que jenkins-slave
-      become: no
-      become_user: "{{ slave_user }}"
       apt:
         name: maven
         state: present
 
     - name: Installer Gradle en tant que jenkins-slave
-      become: no
-      become_user: "{{ slave_user }}"
       apt:
         name: gradle
         state: present
 
     - name: Installer d'autres outils DevOps en tant que jenkins-slave
-      become: no
-      become_user: "{{ slave_user }}"
       apt:
         name:
           - tmux

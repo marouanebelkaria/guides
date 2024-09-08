@@ -1,0 +1,48 @@
+---
+- name: Install Jenkins on local Ubuntu 24 machine without JDK installation
+  hosts: localhost
+  become: yes
+  connection: local
+  tasks:
+
+    - name: Update apt package manager
+      ansible.builtin.apt:
+        update_cache: yes
+        force_apt_get: yes
+
+    # Commenting out the JDK installation task since JDK is already installed
+    # - name: Install Java (Jenkins requires Java)
+    #   ansible.builtin.apt:
+    #     name: openjdk-11-jdk
+    #     state: present
+
+    - name: Add Jenkins repository key
+      ansible.builtin.apt_key:
+        url: https://pkg.jenkins.io/debian/jenkins.io.key
+        state: present
+
+    - name: Add Jenkins apt repository
+      ansible.builtin.apt_repository:
+        repo: deb http://pkg.jenkins.io/debian-stable binary/
+        state: present
+
+    - name: Update apt cache after adding Jenkins repository
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Install Jenkins
+      ansible.builtin.apt:
+        name: jenkins
+        state: present
+
+    - name: Start Jenkins service
+      ansible.builtin.systemd:
+        name: jenkins
+        state: started
+        enabled: yes
+
+    - name: Ensure firewall allows Jenkins (port 8080)
+      ansible.builtin.ufw:
+        rule: allow
+        port: '8080'
+        proto: tcp

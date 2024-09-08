@@ -16,15 +16,13 @@
     #     name: openjdk-11-jdk
     #     state: present
 
-    - name: Download Jenkins GPG key
-      ansible.builtin.get_url:
-        url: https://pkg.jenkins.io/debian/jenkins.io.key
-        dest: /usr/share/keyrings/jenkins-keyring.gpg
-        mode: '0644'
+    - name: Download Jenkins GPG key using curl
+      ansible.builtin.command:
+        cmd: "curl -fsSL https://pkg.jenkins.io/debian/jenkins.io.key | sudo tee /etc/apt/trusted.gpg.d/jenkins.gpg"
 
-    - name: Add Jenkins apt repository with signed-by option
+    - name: Add Jenkins apt repository without signed-by option
       ansible.builtin.apt_repository:
-        repo: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.gpg] https://pkg.jenkins.io/debian-stable binary/"
+        repo: "deb https://pkg.jenkins.io/debian-stable binary/"
         state: present
         filename: 'jenkins.list'
 

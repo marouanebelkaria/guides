@@ -15,9 +15,9 @@
     jenkins_port: 8090
     java_version: "openjdk-11-jre"
     java_home_path: "/usr/lib/jvm/java-11-openjdk-amd64"
-    app_bin_path: "/app/bin"  # Répertoire cible pour les binaires
-    app_versions_path: "/app/versions"  # Répertoire pour les versions des outils
-    slave_user: "jenkins-slave"  # Nom de l'utilisateur pour l'installation des outils
+    app_bin_path: "/app/bin"
+    app_versions_path: "/app/versions"
+    slave_user: "jenkins-slave"
 
   tasks:
 
@@ -88,18 +88,10 @@
       apt:
         update_cache: yes
 
-    - name: Assurez-vous que l'utilisateur Jenkins existe avant d'appliquer les permissions
-      getent:
-        database: passwd
-        key: jenkins
-      register: jenkins_user_check
-
-    - name: Créer l'utilisateur Jenkins si nécessaire
-      user:
+    - name: Installer Jenkins (nécessite des droits élevés)
+      apt:
         name: jenkins
-        shell: /bin/bash
-        home: /var/lib/jenkins
-      when: jenkins_user_check is failed
+        state: present
 
     - name: Appliquer les permissions correctes aux répertoires Jenkins (nécessite des droits élevés)
       file:
@@ -108,7 +100,6 @@
         group: jenkins
         recurse: yes
       become: yes
-      when: jenkins_user_check is succeeded or jenkins_user_check is changed
 
     - name: Assurez-vous que le port Jenkins est configuré correctement
       lineinfile:
@@ -122,6 +113,12 @@
         owner: jenkins
         group: jenkins
         recurse: yes
+
+    - name: Démarrer et activer Jenkins (nécessite des droits élevés)
+      systemd:
+        name: jenkins
+        state: restarted
+        enabled: yes
 
     - name: Installer Docker (nécessite des droits élevés)
       shell: |
@@ -180,17 +177,6 @@
         rm terraform_{{ terraform_version }}_linux_amd64.zip
       args:
         executable: /bin/bash
-
-    - name: Installer Jenkins (nécessite des droits élevés)
-      apt:
-        name: jenkins
-        state: present
-
-    - name: Démarrer et activer Jenkins (nécessite des droits élevés)
-      systemd:
-        name: jenkins
-        state: restarted
-        enabled: yes
 
     - name: Installer PostgreSQL (nécessite des droits élevés)
       apt:

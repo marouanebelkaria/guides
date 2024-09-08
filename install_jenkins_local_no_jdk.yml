@@ -16,11 +16,10 @@
     #     name: openjdk-11-jdk
     #     state: present
 
-    - name: Download Jenkins GPG key to /usr/share/keyrings
-      ansible.builtin.apt_key:
+    - name: Download Jenkins GPG key
+      ansible.builtin.get_url:
         url: https://pkg.jenkins.io/debian/jenkins.io.key
-        state: present
-        keyring: /usr/share/keyrings/jenkins-keyring.gpg
+        dest: /usr/share/keyrings/jenkins-keyring.gpg
 
     - name: Add Jenkins apt repository
       ansible.builtin.apt_repository:

@@ -16,8 +16,8 @@
     #     name: openjdk-11-jdk
     #     state: present
 
-    - name: Download Jenkins GPG key using curl and store in /etc/apt/trusted.gpg.d
-      ansible.builtin.shell: "curl -fsSL https://pkg.jenkins.io/debian/jenkins.io.key | sudo tee /etc/apt/trusted.gpg.d/jenkins.gpg > /dev/null"
+    - name: Download Jenkins GPG key in ASCII format and store it
+      ansible.builtin.shell: "curl -fsSL https://pkg.jenkins.io/debian/jenkins.io.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/jenkins.asc"
 
     - name: Add Jenkins apt repository without signed-by option
       ansible.builtin.apt_repository:

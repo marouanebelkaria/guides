@@ -88,11 +88,18 @@
       apt:
         update_cache: yes
 
-    - name: Assurez-vous que le port Jenkins est configuré correctement
-      lineinfile:
-        path: /etc/default/jenkins
-        regexp: '^HTTP_PORT='
-        line: 'HTTP_PORT={{ jenkins_port }}'
+    - name: Assurez-vous que l'utilisateur Jenkins existe avant d'appliquer les permissions
+      getent:
+        database: passwd
+        key: jenkins
+      register: jenkins_user_check
+
+    - name: Créer l'utilisateur Jenkins si nécessaire
+      user:
+        name: jenkins
+        shell: /bin/bash
+        home: /var/lib/jenkins
+      when: jenkins_user_check is failed
 
     - name: Appliquer les permissions correctes aux répertoires Jenkins (nécessite des droits élevés)
       file:
@@ -100,6 +107,14 @@
         owner: jenkins
         group: jenkins
         recurse: yes
+      become: yes
+      when: jenkins_user_check is succeeded or jenkins_user_check is changed
+
+    - name: Assurez-vous que le port Jenkins est configuré correctement
+      lineinfile:
+        path: /etc/default/jenkins
+        regexp: '^HTTP_PORT='
+        line: 'HTTP_PORT={{ jenkins_port }}'
 
     - name: Appliquer les permissions correctes aux répertoires de logs Jenkins (nécessite des droits élevés)
       file:
